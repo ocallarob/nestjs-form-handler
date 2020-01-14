@@ -142,7 +142,7 @@ describe("AppController (e2e)", () => {
   const formDefinitionServiceName = "magician";
 
   describe(`Form Definition CRUD`, () => {
-    describe(`When POST is made to ${formDefinitionPath}`, () => {
+    describe.only(`When POST is made to ${formDefinitionPath}`, () => {
       it(`Should create a new Form Definition entry in the DB and return 201`, () => {
         return request(app.getHttpServer())
           .post(formDefinitionPath)
