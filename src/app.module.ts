@@ -11,7 +11,6 @@ FirebaseAdmin.initializeApp({
 });
 
 @Module({
-  imports: [FirebaseAdmin],
   controllers: [AppController],
   providers: [AppService]
 })
