@@ -1,6 +1,6 @@
-import { Controller, Post, Body } from "@nestjs/common";
+import { Controller, Post, Body, Get, Param, Put } from "@nestjs/common";
 import { FormDefinitionService } from "./form-definitions.service";
-import { FormDefinitionDTO } from "./form-definition.dto";
+import { FormDefinitionDTO, FormDTO } from "./form-definition.dto";
 
 @Controller()
 export class FormDefinitionController {
@@ -9,5 +9,21 @@ export class FormDefinitionController {
   @Post()
   createFormDefinition(@Body() formDefinitionDTO: FormDefinitionDTO): Object {
     return this.formDefinitionService.createFormDefinition(formDefinitionDTO);
+  }
+
+  @Get(":serviceName")
+  readFormDefinition(@Param("serviceName") serviceName): Object {
+    return this.formDefinitionService.readFormDefinition(serviceName);
+  }
+
+  @Put(":serviceName")
+  updateFormDefinition(
+    @Param("serviceName") serviceName,
+    @Body() formDefinitionDTO: FormDTO
+  ): Object {
+    return this.formDefinitionService.updateFormDefinition(
+      serviceName,
+      formDefinitionDTO
+    );
   }
 }

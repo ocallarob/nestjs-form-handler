@@ -5,7 +5,7 @@ class ValidationDTO {
   validationMessage?: string;
 }
 
-class FormDTO {
+export class FormDTO {
   key: string;
   type: string;
   title?: string;
