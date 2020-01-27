@@ -1,26 +1,22 @@
-import { mocked } from "ts-jest/utils";
-import {
-  ConflictException,
-  NotFoundException,
-  BadRequestException
-} from "@nestjs/common";
-import { Test, TestingModule } from "@nestjs/testing";
+import { mocked } from 'ts-jest/utils';
+import { ConflictException, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Test, TestingModule } from '@nestjs/testing';
 
-import { DatabaseModule } from "../database-providers/database.module";
+import { DatabaseModule } from '../database-providers/database.module';
 
-import { FormDefinitionController } from "./form-definitions.controller";
-import { FormDefinitionService } from "./form-definitions.service";
+import { FormDefinitionController } from './form-definitions.controller';
+import { FormDefinitionService } from './form-definitions.service';
 
-describe("FormDefinitionController", () => {
+describe('FormDefinitionController', () => {
   let formDefinitionController: FormDefinitionController;
 
   const dummyFormDefinition = {
     magician: [
       {
-        key: "name",
-        placeholder: "Your name...",
-        title: "Name",
-        type: "string",
+        key: 'name',
+        placeholder: 'Your name...',
+        title: 'Name',
+        type: 'string',
         validation: {
           required: true
         }
@@ -33,8 +29,7 @@ describe("FormDefinitionController", () => {
   ).reduce(
     (formattedObject, arrayPosition) => ({
       ...formattedObject,
-      [arrayPosition]:
-        dummyFormDefinition[dummyFormDefinitionServiceName][arrayPosition]
+      [arrayPosition]: dummyFormDefinition[dummyFormDefinitionServiceName][arrayPosition]
     }),
     {}
   );
@@ -45,14 +40,14 @@ describe("FormDefinitionController", () => {
     .mockRejectedValueOnce({
       code: 6,
       details:
-        "Document already exists: projects/nestjs-serverless-api/databases/(default)/documents/form-definition/magician",
+        'Document already exists: projects/nestjs-serverless-api/databases/(default)/documents/form-definition/magician',
       metadata: { internalRepr: {}, options: {} }
     });
   const mockGetFn = jest
     .fn()
     .mockResolvedValueOnce({
       exists: true,
-      data: () => dummyFormDefinition[dummyFormDefinitionServiceName]
+      data: () => firestoreFormatFormDefinition
     })
     .mockResolvedValueOnce({
       exists: false
@@ -63,18 +58,20 @@ describe("FormDefinitionController", () => {
     .mockRejectedValueOnce({
       code: 5,
       details:
-        "No document to update: projects/nestjs-serverless-api/databases/(default)/documents/form-definition/nonExistentService",
+        'No document to update: projects/nestjs-serverless-api/databases/(default)/documents/form-definition/nonExistentService',
       metadata: { internalRepr: {}, options: {} }
     });
+  const mockDeleteFn = jest.fn().mockResolvedValueOnce({});
 
   const firestoreMock = mocked({
     doc: jest.fn(() => ({
       create: mockCreateFn,
       get: mockGetFn,
-      update: mockUpdateFn
+      update: mockUpdateFn,
+      delete: mockDeleteFn
     }))
   });
-  const DOCUMENT_PATH = "form-definition/magician";
+  const DOCUMENT_PATH = 'form-definition/magician';
 
   beforeAll(async () => {
     const app: TestingModule = await Test.createTestingModule({
@@ -82,7 +79,7 @@ describe("FormDefinitionController", () => {
       controllers: [FormDefinitionController],
       providers: [FormDefinitionService]
     })
-      .overrideProvider("FIREBASE_CONNECTION")
+      .overrideProvider('FIREBASE_CONNECTION')
       .useFactory({
         factory: async () => {
           return firestoreMock;
@@ -90,13 +87,11 @@ describe("FormDefinitionController", () => {
       })
       .compile();
 
-    formDefinitionController = app.get<FormDefinitionController>(
-      FormDefinitionController
-    );
+    formDefinitionController = app.get<FormDefinitionController>(FormDefinitionController);
   });
 
-  describe("createFormDefinition", () => {
-    it("should create an entry and return empty Object, should throw conflict on repeated data", async () => {
+  describe('createFormDefinition', () => {
+    it('should create an entry and return empty Object, should throw conflict on repeated data', async () => {
       await expect(
         formDefinitionController.createFormDefinition(dummyFormDefinition)
       ).resolves.toStrictEqual({});
@@ -122,24 +117,24 @@ describe("FormDefinitionController", () => {
     });
   });
 
-  describe("readFormDefinition", () => {
-    it("should return an entry from the DB", async () => {
+  describe('readFormDefinition', () => {
+    it('should return an entry from the DB', async () => {
       await expect(
-        formDefinitionController.readFormDefinition(
-          `${dummyFormDefinitionServiceName}`
-        )
+        formDefinitionController.readFormDefinition(`${dummyFormDefinitionServiceName}`)
       ).resolves.toStrictEqual(firestoreFormatFormDefinition);
       expect(firestoreMock.doc).toHaveBeenCalledWith(DOCUMENT_PATH);
       expect(mockGetFn).toHaveBeenCalledWith();
 
       await expect(
-        formDefinitionController.readFormDefinition("nonExistentService")
+        formDefinitionController.readFormDefinition('nonExistentService')
       ).rejects.toThrow(NotFoundException);
     });
   });
 
-  describe("updateFormDefinition", () => {
-    it("should return an entry from the DB", async () => {
+  describe('updateFormDefinition', () => {
+    it('should return an entry from the DB', async () => {
+      console.log(dummyFormDefinition[dummyFormDefinitionServiceName]);
+
       await expect(
         formDefinitionController.updateFormDefinition(
           `${dummyFormDefinitionServiceName}`,
@@ -147,14 +142,26 @@ describe("FormDefinitionController", () => {
         )
       ).resolves.toStrictEqual({});
       expect(firestoreMock.doc).toHaveBeenCalledWith(DOCUMENT_PATH);
-      expect(mockUpdateFn).toHaveBeenCalledWith(dummyFormDefinition.magician);
+      expect(mockUpdateFn).toHaveBeenCalledWith({
+        [dummyFormDefinitionServiceName]: dummyFormDefinition.magician
+      });
 
       await expect(
         formDefinitionController.updateFormDefinition(
-          "nonExistentService",
+          'nonExistentService',
           dummyFormDefinition[dummyFormDefinitionServiceName]
         )
       ).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('deleteFormDefinition', () => {
+    it('should remove an entry from the DB', async () => {
+      await expect(
+        formDefinitionController.deleteFormDefinition(`${dummyFormDefinitionServiceName}`)
+      ).resolves.toStrictEqual({});
+      expect(firestoreMock.doc).toHaveBeenCalledWith(DOCUMENT_PATH);
+      expect(mockDeleteFn).toHaveBeenCalledWith();
     });
   });
 });

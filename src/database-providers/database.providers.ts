@@ -14,9 +14,7 @@ export const databaseProviders = [
   {
     provide: 'FIREBASE_MOCK',
     useFactory: () => ({
-      document: () => ({
-        
-      })
+      document: () => ({})
     })
   }
 ];
